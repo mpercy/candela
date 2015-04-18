@@ -2,9 +2,7 @@
 
 #include <iostream>
 
-using std::cout;
-using std::endl;
-
+// Simple test for bitmap.h
 int main(int argc, char** argv) {
   CanvasBitMap canvas_bitmap;
   canvas_bitmap.width = 3;

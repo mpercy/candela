@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+// Represents an (x,y) point.
 struct Point {
   Point() : x(0), y(0) {}
   Point(int x, int y) : x(x), y(y) {}
@@ -18,6 +19,7 @@ struct Point {
   int y;
 };
 
+// Comparator so we can put Point in a std::map.
 struct ComparePoint {
     bool operator() (const Point& a, const Point& b) const{
       if (a.x < b.x) return true;
@@ -34,6 +36,7 @@ struct CanvasBitMap {
   BitMap bitmap;
 };
 
+// Print 'canvas_bitmap' as C++ source code.
 void PrintBitmapAsCode(const CanvasBitMap& canvas_bitmap) {
   std::cout << "CanvasBitMap canvas_bitmap;" << std::endl;
   std::cout << "canvas_bitmap.width = " << canvas_bitmap.width << ";" << std::endl;
@@ -46,13 +49,13 @@ void PrintBitmapAsCode(const CanvasBitMap& canvas_bitmap) {
   }
 }
 
+// Render 'canvas_bitmap' on the console.
 void RenderBitmap(const CanvasBitMap& canvas_bitmap) {
   for (int y = 0; y < canvas_bitmap.height; y++) {
     for (int x = 0; x < canvas_bitmap.width; x++) {
       Point p(x, y);
       if (canvas_bitmap.bitmap.count(p) > 0) {
-        std::cout << "X";
-        //std::cout << "Found " << p.ToString() << std::endl;
+        std::cout << "#";
       } else {
         std::cout << " ";
       }
