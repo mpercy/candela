@@ -194,7 +194,7 @@ bool BDFFont::RenderLetter(char c, CanvasBitMap* letter_bitmap) {
     return false;
   }
   for (int y = 0; y < letter_bitmap->height; y++) {
-    uint8_t b = bm[y];
+    uint8_t b = bm[letter_bitmap->height - 1 - y]; // The bitmaps are specified high y-coord first.
     uint8_t width = bdf_char.bbx.width;
     cerr << "DEBUG: --" << endl;
     cerr << "DEBUG: BBX char width: " << (int)width << endl;
@@ -212,7 +212,6 @@ bool BDFFont::RenderLetter(char c, CanvasBitMap* letter_bitmap) {
         int p_y = y + bdf_char.bbx.y_offset;
         cerr << "DEBUG: Adding Point: " << p_x << ", " << p_y << endl;
         letter_bitmap->bitmap.insert(Point(p_x, p_y));
-        // TODO: Implement offsets.
       }
     }
   }

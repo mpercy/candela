@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+const char kRenderChar = '#';
+
 // Represents an (x,y) point.
 struct Point {
   Point() : x(0), y(0) {}
@@ -50,12 +52,15 @@ void PrintBitmapAsCode(const CanvasBitMap& canvas_bitmap) {
 }
 
 // Render 'canvas_bitmap' on the console.
+//
+// The way the bitmaps are represented, the (0,0) coordinate is in the
+// bottom-left corner of the screen.
 void RenderBitmap(const CanvasBitMap& canvas_bitmap) {
-  for (int y = 0; y < canvas_bitmap.height; y++) {
+  for (int y = canvas_bitmap.height - 1; y >= 0; y--) {
     for (int x = 0; x < canvas_bitmap.width; x++) {
       Point p(x, y);
       if (canvas_bitmap.bitmap.count(p) > 0) {
-        std::cout << "#";
+        std::cout << kRenderChar;
       } else {
         std::cout << " ";
       }
