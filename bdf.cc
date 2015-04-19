@@ -14,6 +14,11 @@
     } \
   } while (false) \
 
+bool g_debug = false;
+bool g_print_code = false;
+
+#define DLOG() g_debug && cerr
+
 using std::cerr;
 using std::cout;
 using std::endl;
@@ -146,8 +151,8 @@ bool BDFFont::Load(const std::string& filename) {
       bdf_char.bbx.height = ToInt(tokens[2]);
       bdf_char.bbx.x_offset = ToInt(tokens[3]);
       bdf_char.bbx.y_offset = ToInt(tokens[4]);
-      if (bdf_char.bbx.height > max_char_height_) {
-        max_char_height_ = bdf_char.bbx.height;
+      if (bdf_char.bbx.height + bdf_char.bbx.y_offset > max_char_height_) {
+        max_char_height_ = bdf_char.bbx.height + bdf_char.bbx.y_offset;
       }
     } else if (first_token == "BITMAP") {
       ENFORCE(!parsing_bitmap, "BITMAP encountered twice without intervening ENDCHAR");
@@ -165,79 +170,59 @@ bool BDFFont::Load(const std::string& filename) {
   return true;
 }
 
-bool BDFFont::TextToBitmap(const std::string& text, CanvasBitMap* phrase_bitmap) {
-  vector<CanvasBitMap> per_letter_blocks;
+bool BDFFont::TextToBitmap(const std::string& text, CanvasBitMap* canvas) {
   for (int i = 0; i < text.length(); i++) {
     char c = text[i];
-    cerr << "DEBUG: ------------" << endl;
-    cerr << "DEBUG: Rendering character: " << c << endl;
-    CanvasBitMap canvas;
-    if (!RenderLetter(c, &canvas)) return false;
-    per_letter_blocks.push_back(canvas);
+    DLOG() << "DEBUG: ------------" << endl;
+    DLOG() << "DEBUG: Rendering character: " << c << endl;
+    if (!RenderLetter(c, canvas)) return false;
   }
-  CombineBitmaps(per_letter_blocks, phrase_bitmap);
   return true;
 }
 
-bool BDFFont::RenderLetter(char c, CanvasBitMap* letter_bitmap) {
+bool BDFFont::RenderLetter(char c, CanvasBitMap* canvas) {
   map<char, BDFChar>::const_iterator iter = chars_.find(c);
   if (iter == chars_.end()) {
     cerr << "Error: Cannot find character in bitmap: " << c << endl;
     return false;
   }
   const BDFChar& bdf_char = iter->second;
-  letter_bitmap->width = std::max(bdf_char.device_width.x, bdf_char.bbx.width);
-  letter_bitmap->height = bdf_char.bbx.height;
   const vector<uint8_t>& bm = bdf_char.bitmap;
-  if (bm.size() != letter_bitmap->height) {
-    cerr << "Bitmap size != BBX height for char: " << bdf_char.name;
-    return false;
-  }
-  for (int y = 0; y < letter_bitmap->height; y++) {
-    uint8_t b = bm[letter_bitmap->height - 1 - y]; // The bitmaps are specified high y-coord first.
-    uint8_t width = bdf_char.bbx.width;
-    cerr << "DEBUG: --" << endl;
-    cerr << "DEBUG: BBX char width: " << (int)width << endl;
-    cerr << std::hex;
-    cerr << "DEBUG: Seen bitmap val: 0x" << (int)b << endl;
-    cerr << std::dec;
+  for (int y = max_char_height_; y >= 0; y--) {
+    int width = bdf_char.bbx.width;
+    int height = bdf_char.bbx.height;
+    int y_offset = bdf_char.bbx.y_offset;
+    DLOG() << "DEBUG: --" << endl;
+    DLOG() << "DEBUG: y pixel: " << y << endl;
+    DLOG() << "DEBUG: BBX char width: " << width << endl;
+    if (y < y_offset) continue;
+    if (y > y_offset + height - 1) continue;
+    // The bitmaps are specified high y-coord first.
+    int bitmap_index = height - y + y_offset - 1;
+    DLOG() << "DEBUG: bitmap index: " << bitmap_index << endl;
+    uint8_t b = bm[bitmap_index];
+    DLOG() << std::hex;
+    DLOG() << "DEBUG: Seen bitmap val: 0x" << static_cast<int>(b) << endl;
+    DLOG() << std::dec;
     for (uint8_t x = 0; x < bdf_char.bbx.width; x++) {
       uint8_t val_at_bit = 1 << (7 - x);
-      cerr << std::hex;
-      cerr << "DEBUG: Looking for bit: 0x" << (int)val_at_bit << endl;
-      cerr << std::dec;
+      DLOG() << std::hex;
+      DLOG() << "DEBUG: Looking for bit: 0x" << (int)val_at_bit << endl;
+      DLOG() << std::dec;
       if (b & val_at_bit) {
         // Render a Point @ (x,y) with the bbx offsets.
-        int p_x = x + bdf_char.bbx.x_offset;
+        int p_x = x + bdf_char.bbx.x_offset + canvas->width;
         int p_y = y + bdf_char.bbx.y_offset;
-        cerr << "DEBUG: Adding Point: " << p_x << ", " << p_y << endl;
-        letter_bitmap->bitmap.insert(Point(p_x, p_y));
+        Point p(p_x, p_y);
+        DLOG() << "DEBUG: Adding Point: " << p.ToString() << endl;
+        canvas->bitmap.insert(p);
       }
     }
   }
-  return true;
-}
 
-void BDFFont::CombineBitmaps(const std::vector<CanvasBitMap>& letter_bitmaps,
-                             CanvasBitMap* phrase_bitmap) {
-  int max_height = 0;
-  int running_width = 0;
-  for (int i = 0; i < letter_bitmaps.size(); i++) {
-    const CanvasBitMap& letter_bitmap = letter_bitmaps[i];
-    if (max_height < letter_bitmap.height) {
-      max_height = letter_bitmap.height;
-    }
-    for (BitMap::const_iterator iter = letter_bitmap.bitmap.begin();
-         iter != letter_bitmap.bitmap.end();
-         ++iter) {
-      phrase_bitmap->bitmap.insert(Point(iter->x + running_width, iter->y));
-    }
-    running_width += letter_bitmap.width;
-  }
-  cerr << "DEBUG: Running width: " << running_width << endl;
-  cerr << "DEBUG: Max height: " << max_height << endl;
-  phrase_bitmap->width = running_width;
-  phrase_bitmap->height = max_height;
+  canvas->width += bdf_char.device_width.x;
+  canvas->height = max_char_height_;
+  return true;
 }
 
 int main(int argc, char** argv) {
@@ -255,7 +240,9 @@ int main(int argc, char** argv) {
     cerr << "Cannot render phrase " << argv[2] << endl;
     return 1;
   }
-  PrintBitmapAsCode(canvas_bitmap);
+  if (g_print_code) {
+    PrintBitmapAsCode(canvas_bitmap);
+  }
   RenderBitmap(canvas_bitmap);
   return 0;
 }

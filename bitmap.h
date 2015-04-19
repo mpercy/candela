@@ -14,7 +14,7 @@ struct Point {
   Point(int x, int y) : x(x), y(y) {}
   std::string ToString() {
     std::stringstream ss;
-    ss << "x: " << x << ", y: " << y;
+    ss << "(" << x << ", " << y << ")";
     return ss.str();
   }
   int x;
@@ -33,6 +33,7 @@ struct ComparePoint {
 typedef std::set<Point, ComparePoint> BitMap; // TODO: Use a std::unordered_set.
 
 struct CanvasBitMap {
+  CanvasBitMap() : width(0), height(0) {}
   int width;
   int height;
   BitMap bitmap;
@@ -57,6 +58,7 @@ void PrintBitmapAsCode(const CanvasBitMap& canvas_bitmap) {
 // bottom-left corner of the screen.
 void RenderBitmap(const CanvasBitMap& canvas_bitmap) {
   for (int y = canvas_bitmap.height - 1; y >= 0; y--) {
+    //std::cout << y << ": ";
     for (int x = 0; x < canvas_bitmap.width; x++) {
       Point p(x, y);
       if (canvas_bitmap.bitmap.count(p) > 0) {

@@ -45,12 +45,13 @@ class BDFFont {
   bool TextToBitmap(const std::string& text, CanvasBitMap* bitmap);
 
  private:
-  // Render a single letter onto its own private bitmap.
-  bool RenderLetter(char c, CanvasBitMap* letter_bitmap);
-
-  // Combine several bitmaps into a single one.
-  // Returns false if and only if the letter bitmaps are not compatible.
-  void CombineBitmaps(const std::vector<CanvasBitMap>& letter_bitmaps, CanvasBitMap* phrase_bitmap);
+  // Render a single letter onto the canvas.
+  // Rendering begins at the specified 'offset'.
+  // On successful completion, 'offset' Point is updated to reflect the
+  // new offset for the next letter after rendering. The 'canvas' is also
+  // updated accordingly.
+  // Returns true if rendering the character was successful, false otherwise.
+  bool RenderLetter(char c, CanvasBitMap* canvas);
 
   // Map of code -> character.
   std::map<char, BDFChar> chars_;
