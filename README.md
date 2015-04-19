@@ -25,5 +25,15 @@ To run:
 
     $ ./bdf tom-thumb.bdf "Message to render"
 
+Example outout:
+
+    ./bdf tom-thumb.bdf "Hello, world!"
+    # #     ##  ##                          ##    #  #
+    # #  ##  #   #   #          # #  #   ##  #   ##  #
+    ### # #  #   #  # #         ### # # #    #  # #  #
+    # # ##   #   #  # #  #      ### # # #    #  # #
+    # #  ## ### ###  #  #       ###  #  #   ###  ##  #
+
+
 This work is licensed under the Apache Software License (ASL) version 2.0.
 Please see LICENSE.txt for details.
